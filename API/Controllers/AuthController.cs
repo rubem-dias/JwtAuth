@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using JwtAuth.API.Models;
+using JwtAuth.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -12,67 +13,40 @@ namespace JwtAuth.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private static User _user = new User();
-        private readonly IConfiguration _configuration;
-
-        public AuthController(IConfiguration config)
+        private readonly IAuthService _authService;
+        
+        public AuthController(IAuthService authService)
         {
-            _configuration = config;
+            _authService = authService;
         }
         [AllowAnonymous]
         [HttpPost("register")]
         public ActionResult<User> Register(UserDTO request)
         {
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-            _user.Username = request.Username;
-            _user.PasswordHash = passwordHash;
-
-            return Ok(_user);
+            try
+            {
+               var response = _authService.Register(request);
+               return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message, ex.InnerException);
+            }
         }
         
         [AllowAnonymous]
         [HttpPost("login")]
         public ActionResult<User> Login(UserDTO request)
         {
-            if (_user.Username != request.Username)
+            try
             {
-                return BadRequest("User not found.");
+                var response = _authService.Login(request);
+                return Ok(response);
             }
-
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, _user.PasswordHash))
+            catch (Exception ex)
             {
-                return BadRequest("Wrong password.");
+                throw new Exception(ex.Message, ex.InnerException);
             }
-
-            string token = CreateToken(_user);
-            return Ok(new {token = token, user_role = _user.Role});
-        }
-        
-        [Authorize(Policy = "Employee")]
-        [HttpGet("teste")]
-        public ActionResult Teste()
-        {
-            return Ok($"Autenticated {_user.Username} - {_user.Role} | {User.FindFirstValue(ClaimTypes.Role)}");
-        }
-        
-        private string CreateToken(User user)
-        {
-            var key = Encoding.ASCII.GetBytes(Settings.Secret);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var tokenDescriptor = new SecurityTokenDescriptor()
-            {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Role, user.Role)
-                }),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
         }
     }
 }

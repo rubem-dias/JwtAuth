@@ -17,7 +17,22 @@
 
   <ItemGroup>
     <Folder Include="API\" />
-    <Folder Include="Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Services\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Services\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Services\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Services\**" />
   </ItemGroup>
 
 </Project>

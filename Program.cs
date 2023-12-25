@@ -1,9 +1,12 @@
 using System.Text;
 using JwtAuth;
+using JwtAuth.Application.Interfaces;
+using JwtAuth.Application.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Add services to the container.
 var key = Encoding.ASCII.GetBytes(Settings.Secret);
